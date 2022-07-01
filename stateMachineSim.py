@@ -2,9 +2,9 @@ from smExceptions import *
 
 class SM_State:
     def __init__(self, name):
-        self._stateName = name
-        self._transitions = []
-        self._defaultChildState = None
+        self._stateName: str = name
+        self._transitions: list = []
+        self._defaultChildState :"SM_State"= None
         self._enterAction = None
         self._duringAction = None
         self._exitAction = None
@@ -17,7 +17,7 @@ class SM_State:
     def transitions(self):
         return tuple(self._transitions)
 
-    def registerTransition(self, condition:str, targetState:SM_State, action: str = None):
+    def registerTransition(self, condition:str, targetState:"SM_State", action: str = None):
         """Adds a transition between current state and targetState.
         - condition should be a Python expression that evaluates to a bool
         - targetState is the state object representing the state to transition to. It is assumed
@@ -31,7 +31,7 @@ class SM_State:
             raise SMBuildException(f"Failed to add transition between {self.stateName} and {targetState.stateName}: syntax error in condition") from e
 
         try:
-            a = compile(condition, "<String>", "eval") if action is not None else None
+            a = compile(condition, "<String>", "exec") if action is not None else None
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add transition between {self.stateName} and {targetState.stateName}: syntax error in action") from e
 
