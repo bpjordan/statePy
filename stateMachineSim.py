@@ -5,6 +5,15 @@ from smExceptions import *
 
 SM_Transition = typing.Tuple[CodeType, "SM_State", typing.Optional[CodeType]]
 
+def runAction(action: typing.Optional[CodeType], locals: dict):
+    #TODO: Figure out how to make this access modules such as pandas and matlib from user input
+            # Possible use for a closure
+    if action is not None:
+        try:
+            exec(action, {}, locals)
+        except Exception as e:
+            raise SMRuntimeException("Execution of a state action failed") from e
+
 class SM_State:
     """
     A State in the state machine.
@@ -128,8 +137,51 @@ class SM_State:
         return None
 
 
-class SM_RunningState:
-    pass
+class SM_ActiveState:
+    """
+    A container for a state that is running in a simulation.
+    """
+    def __init__(self, stateTemplate: SM_State, simData: typing.Optional[dict] = None) -> None:
+        self.stateTemplate = stateTemplate
+        self.childState = SM_ActiveState(stateTemplate.defaultChildState)\
+            if stateTemplate.defaultChildState is not None else None
+        if simData is not None:
+            self.activateState(simData)
+
+    def iterate(self, simData: dict):
+        """
+        Run one iteration on the data, mutating it according to the current active state, and taking any valid transitions
+            from the current state or its children
+        """
+        if (t := self.stateTemplate.checkTransitions(simData)) is not None:
+            runAction(self.stateTemplate.exitAction, simData)
+            self.transition(t, simData)
+        else:
+            runAction(self.stateTemplate.duringAction, simData)
+            if self.childState is not None:
+                self.childState.iterate(simData)
+
+    def transition(self, transition: SM_Transition, simData:dict):
+        """
+        Transition this active state to another state and activate that state
+        """
+        runAction(transition[2], simData)
+        self.stateTemplate = transition[1]
+        self.activateState(simData)
+
+    def activateState(self, simData: dict):
+        """
+        Run the state's entry action, set it's child state to the default,
+            and recursively activate the child state
+        """
+        runAction(self.stateTemplate.enterAction, simData)
+        self.childState = SM_ActiveState(self.stateTemplate.defaultChildState, simData)\
+            if self.stateTemplate.defaultChildState is not None else None
+        
 
 class SM_Simulation:
+    """
+    An object that controls a single simulation of the state machine and exposes its parameters
+    """
+
     pass
