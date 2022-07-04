@@ -1,11 +1,11 @@
 from types import CodeType
-import typing
+from typing import Tuple, Optional
 
 from smExceptions import *
 
-SM_Transition = typing.Tuple[CodeType, "SM_State", typing.Optional[CodeType]]
+SM_Transition = Tuple[CodeType, "SM_State", Optional[CodeType]]
 
-def runAction(action: typing.Optional[CodeType], locals: dict):
+def runAction(action: Optional[CodeType], locals: dict):
     #TODO: Figure out how to make this access modules such as pandas and matlib from user input
             # Possible use for a closure
     if action is not None:
@@ -32,10 +32,10 @@ class SM_State:
     def __init__(self, name: str):
         self._stateName: str = name
         self._transitions: list[SM_Transition] = []
-        self._defaultChildState :typing.Optional["SM_State"] = None
-        self._enterAction: typing.Optional[CodeType] = None
-        self._duringAction: typing.Optional[CodeType] = None
-        self._exitAction: typing.Optional[CodeType] = None
+        self._defaultChildState :Optional["SM_State"] = None
+        self._enterAction: Optional[CodeType] = None
+        self._duringAction: Optional[CodeType] = None
+        self._exitAction: Optional[CodeType] = None
 
     @property
     def stateName(self):
@@ -54,7 +54,7 @@ class SM_State:
         """
         return tuple(self._transitions)
 
-    def registerTransition(self, condition:str, targetState:"SM_State", action: str = None):
+    def addTransition(self, condition:str, targetState:"SM_State", action: str = None):
         """Adds a transition between this state and targetState.
         - condition should be a Python expression that evaluates to a bool
         - targetState is the state object representing the state to transition to. It is assumed
@@ -73,6 +73,8 @@ class SM_State:
             raise SMBuildException(f"Failed to add transition from {self.stateName} to {targetState.stateName} (syntax error in action)") from e
 
         self._transitions.append((c, a, targetState))
+
+        return self
 
     @property
     def defaultChildState(self):
@@ -119,7 +121,7 @@ class SM_State:
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add exit action to state '{self.stateName}' (syntax error)") from e
 
-    def checkTransitions(self, data: dict) -> typing.Optional[SM_Transition]:
+    def checkTransitions(self, data: dict) -> Optional[SM_Transition]:
         """
         Check for valid transitions leading out of this state.
 
@@ -141,7 +143,7 @@ class SM_ActiveState:
     """
     A container for a state that is running in a simulation.
     """
-    def __init__(self, stateTemplate: SM_State, simData: typing.Optional[dict] = None) -> None:
+    def __init__(self, stateTemplate: SM_State, simData: Optional[dict] = None) -> None:
         self.stateTemplate = stateTemplate
         self.childState = SM_ActiveState(stateTemplate.defaultChildState)\
             if stateTemplate.defaultChildState is not None else None
