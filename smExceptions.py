@@ -8,3 +8,9 @@ class SMBuildException(SMException):
 
 class SMRuntimeException(SMException):
     pass
+
+class SMWarning(UserWarning):
+    pass
+
+class SMControlWarning(SMWarning):
+    pass
