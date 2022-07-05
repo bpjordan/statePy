@@ -2,7 +2,7 @@ from types import CodeType
 from typing import List, Tuple, Optional, AnyStr, Any
 import warnings
 
-from smExceptions import *
+from .smExceptions import *
 
 SM_Transition = Tuple[CodeType, "SM_State", Optional[CodeType]]
 

@@ -1,5 +1,9 @@
-import stateMachineSim as sm
+import src as sm
 import threading
+
+"""
+Example/test usage of programattic state machine construction. Place in main directory to run
+"""
 
 def constructSM():
     redLight = sm.SM_State("Red")
