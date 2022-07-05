@@ -20,6 +20,7 @@ class SM_State:
     A State in the state machine.
     
     This class is used to define a state in the state machine which can mutate data as long as it is active.
+
     This class is not affected by the actual execution of a state machine, meaning that it acts as a template that
         can be used by multiple simulations of the same state machine in parallel.
         
@@ -73,7 +74,7 @@ class SM_State:
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add transition from {self.stateName} to {targetState.stateName} (syntax error in action)") from e
 
-        self._transitions.append((c, a, targetState))
+        self._transitions.append((c, targetState, a))
 
         return self
 
@@ -209,7 +210,7 @@ class SM_Simulation:
 
         self.remainingIterations = iterations
 
-        if ~self.isRunning:
+        if not self.isRunning:
             self.isRunning = True
             self.run()
 
@@ -232,9 +233,18 @@ class SM_Simulation:
 
         return tmp
 
+    def wait(self):
+        """
+        If the simulation has a finite number of iterations remaining, will halt execution of the
+            current thread until those iterations complete.
+        """
+        while self.remainingIterations is not None and self.remainingIterations > 0:
+            pass
+
     def stop(self, after=0):
         if self.isRunning:
             self.remainingIterations = after
+            self.wait()
             self.isRunning = False
         else:
             warnings.warn("Attempted to stop a simulation that was already stopped", SMControlWarning)
