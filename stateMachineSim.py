@@ -1,11 +1,12 @@
 from types import CodeType
-from typing import Tuple, Optional
+from typing import List, Tuple, Optional, AnyStr, Any
+import warnings
 
 from smExceptions import *
 
 SM_Transition = Tuple[CodeType, "SM_State", Optional[CodeType]]
 
-def runAction(action: Optional[CodeType], locals: dict):
+def runAction(action: Optional[CodeType], locals: dict[AnyStr, Any]):
     #TODO: Figure out how to make this access modules such as pandas and matlib from user input
             # Possible use for a closure
     if action is not None:
@@ -121,7 +122,7 @@ class SM_State:
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add exit action to state '{self.stateName}' (syntax error)") from e
 
-    def checkTransitions(self, data: dict) -> Optional[SM_Transition]:
+    def checkTransitions(self, data: dict[AnyStr, Any]) -> Optional[SM_Transition]:
         """
         Check for valid transitions leading out of this state.
 
@@ -143,14 +144,14 @@ class SM_ActiveState:
     """
     A container for a state that is running in a simulation.
     """
-    def __init__(self, stateTemplate: SM_State, simData: Optional[dict] = None) -> None:
+    def __init__(self, stateTemplate: SM_State, simData: Optional[dict[AnyStr, Any]] = None) -> None:
         self.stateTemplate = stateTemplate
         self.childState = SM_ActiveState(stateTemplate.defaultChildState)\
             if stateTemplate.defaultChildState is not None else None
         if simData is not None:
             self.activateState(simData)
 
-    def iterate(self, simData: dict):
+    def iterate(self, simData: dict[AnyStr, Any]):
         """
         Run one iteration on the data, mutating it according to the current active state, and taking any valid transitions
             from the current state or its children
@@ -163,7 +164,7 @@ class SM_ActiveState:
             if self.childState is not None:
                 self.childState.iterate(simData)
 
-    def transition(self, transition: SM_Transition, simData:dict):
+    def transition(self, transition: SM_Transition, simData:dict[AnyStr, Any]):
         """
         Transition this active state to another state and activate that state
         """
@@ -171,7 +172,7 @@ class SM_ActiveState:
         self.stateTemplate = transition[1]
         self.activateState(simData)
 
-    def activateState(self, simData: dict):
+    def activateState(self, simData: dict[AnyStr, Any]):
         """
         Run the state's entry action, set it's child state to the default,
             and recursively activate the child state
@@ -186,4 +187,54 @@ class SM_Simulation:
     An object that controls a single simulation of the state machine and exposes its parameters
     """
 
-    pass
+    def __init__(self, startState:SM_State, inputParams:dict[AnyStr, Any], outputParams:Optional[List[AnyStr]]):
+        self.simData = inputParams
+        self.outputParams = outputParams
+        self.currentState = SM_ActiveState(startState, self.simData)
+        self.remainingIterations:Optional[int] = None
+        self.isRunning = False
+        self.safe = True
+        self.elapsedIterations = 0
+
+    def run(self):
+        while self.isRunning is True:
+            while self.remainingIterations is None or self.remainingIterations > 0:
+                self.safe = False
+                self.currentState.iterate(self.simData)
+                self.elapsedIterations += 1
+                self.remainingIterations -= 1
+            self.safe = True
+
+    def start(self, iterations=None):
+
+        self.remainingIterations = iterations
+
+        if ~self.isRunning:
+            self.isRunning = True
+            self.run()
+
+    def pause(self):
+        """
+        Prevent the state machine from continuing without actually stopping the execution thread alltogether
+            Useful for safely extracting or logging data in the middle of a run
+
+            Returns the number of state machine iterations left to run. Use this to start back where execution left off.    
+            Example usage:
+                tmp = s.pause()
+                doTheThing()
+                s.start(tmp)
+        """
+
+        tmp = self.remainingIterations
+        self.remainingIterations = 0
+        while not self.safe:
+            pass
+
+        return tmp
+
+    def stop(self, after=0):
+        if self.isRunning:
+            self.remainingIterations = after
+            self.isRunning = False
+        else:
+            warnings.warn("Attempted to stop a simulation that was already stopped", SMControlWarning)
