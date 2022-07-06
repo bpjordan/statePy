@@ -250,9 +250,9 @@ class SM_Simulation:
         while self.isRunning is True:
             while self.remainingIterations is None or self.remainingIterations > 0:
                 self.safe = False
+                self.remainingIterations -= 1
                 self.currentState.iterate(self.simData)
                 self.elapsedIterations += 1
-                self.remainingIterations -= 1
             self.safe = True
 
     def start(self, iterations=None):
