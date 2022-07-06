@@ -1,5 +1,6 @@
+from lib2to3.pgen2.token import OP
 from types import CodeType
-from typing import List, Tuple, Optional, AnyStr, Any, NamedTuple
+from typing import List, Tuple, Optional, Any, NamedTuple
 import warnings
 
 from .smExceptions import *
@@ -7,10 +8,12 @@ from .smExceptions import *
 class SM_Transition(NamedTuple):
     condition: CodeType
     destination: "SM_State"
-    action: Optional[CodeType]
+    action: Optional[CodeType] = None
+    conditionStr: Optional[str] = None
+    actionStr: Optional[str] = None
 
 
-def runAction(action: Optional[CodeType], locals: dict[AnyStr, Any]):
+def runAction(action: Optional[CodeType], locals: dict[str, Any]):
     #TODO: Figure out how to make this access modules such as pandas and matlib from user input
             # Possible use for a closure
     if action is not None:
@@ -35,13 +38,14 @@ class SM_State:
         parent state is active. To make a state a parent state, define a defaultChildState for that state. This becomes
         the default state for the child state machine"""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, keepActionStrings: bool = True):
         self._stateName: str = name
         self._transitions: list[SM_Transition] = []
         self._defaultChildState: Optional["SM_State"] = None
         self._enterAction: Optional[CodeType] = None
         self._duringAction: Optional[CodeType] = None
         self._exitAction: Optional[CodeType] = None
+        self._actionStrings: Optional[List[Optional[str]]] = [None, None, None] if keepActionStrings else None
 
     @property
     def stateName(self):
@@ -103,6 +107,9 @@ class SM_State:
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add entry action to '{self.stateName}' (syntax error)") from e
 
+        if self._actionStrings is not None:
+            self._actionStrings[0] = value
+
     @property
     def duringAction(self):
         """The action to take each iteration that the state machine remains in this state."""
@@ -114,6 +121,9 @@ class SM_State:
             self._duringAction = compile(value, "<String>", "exec")
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add during action to '{self.stateName}' (syntax error)") from e
+
+        if self._actionStrings is not None:
+            self._actionStrings[1] = value
 
     @property
     def exitAction(self):
@@ -127,7 +137,10 @@ class SM_State:
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add exit action to state '{self.stateName}' (syntax error)") from e
 
-    def checkTransitions(self, data: dict[AnyStr, Any]) -> Optional[SM_Transition]:
+        if self._actionStrings is not None:
+            self._actionStrings[2] = value
+
+    def checkTransitions(self, data: dict[str, Any]) -> Optional[SM_Transition]:
         """
         Check for valid transitions leading out of this state.
 
@@ -189,19 +202,40 @@ class SM_State:
 
         return a
 
+    def __repr__(self):
+        s = "state: " + self.stateName
+
+        if self._actionStrings is not None:
+            for actionName, action in zip(("entry", "during", "exit"), self._actionStrings):
+                if action is not None:
+                    s += f"\n\n{actionName}:\n{action}"
+
+        if len(self.transitions) > 0:
+            s += "\n\ntransitions:"
+            for t in self.transitions:
+                s += '\n'
+                if t.conditionStr is not None:
+                    s += f"({t.conditionStr})"
+                if t.actionStr is not None:
+                    s += f"[{t.actionStr}]"
+
+                s += f"--> {t.destination.stateName}"
+
+        return s
+
 
 class SM_ActiveState:
     """
     A container for a state that is running in a simulation.
     """
-    def __init__(self, stateTemplate: SM_State, simData: Optional[dict[AnyStr, Any]] = None) -> None:
+    def __init__(self, stateTemplate: SM_State, simData: Optional[dict[str, Any]] = None) -> None:
         self.stateTemplate = stateTemplate
         self.childState = SM_ActiveState(stateTemplate.defaultChildState)\
             if stateTemplate.defaultChildState is not None else None
         if simData is not None:
             self.activateState(simData)
 
-    def iterate(self, simData: dict[AnyStr, Any]):
+    def iterate(self, simData: dict[str, Any]):
         """
         Run one iteration on the data, mutating it according to the current active state, and taking any valid transitions
             from the current state or its children
@@ -214,7 +248,7 @@ class SM_ActiveState:
             if self.childState is not None:
                 self.childState.iterate(simData)
 
-    def transition(self, transition: SM_Transition, simData:dict[AnyStr, Any]):
+    def transition(self, transition: SM_Transition, simData:dict[str, Any]):
         """
         Transition this active state to another state and activate that state
         """
@@ -222,7 +256,7 @@ class SM_ActiveState:
         self.stateTemplate = transition[1]
         self.activateState(simData)
 
-    def activateState(self, simData: dict[AnyStr, Any]):
+    def activateState(self, simData: dict[str, Any]):
         """
         Run the state's entry action, set it's child state to the default,
             and recursively activate the child state
@@ -237,7 +271,7 @@ class SM_Simulation:
     An object that controls a single simulation of the state machine and exposes its parameters
     """
 
-    def __init__(self, startState:SM_State, inputParams:dict[AnyStr, Any], outputParams:Optional[List[AnyStr]]):
+    def __init__(self, startState:SM_State, inputParams:dict[str, Any], outputParams:Optional[List[str]]):
         self.simData = inputParams
         self.outputParams = outputParams
         self.currentState = SM_ActiveState(startState, self.simData)
