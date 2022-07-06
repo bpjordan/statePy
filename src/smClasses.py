@@ -1,10 +1,14 @@
 from types import CodeType
-from typing import List, Tuple, Optional, AnyStr, Any
+from typing import List, Tuple, Optional, AnyStr, Any, NamedTuple
 import warnings
 
 from .smExceptions import *
 
-SM_Transition = Tuple[CodeType, "SM_State", Optional[CodeType]]
+class SM_Transition(NamedTuple):
+    condition: CodeType
+    destination: "SM_State"
+    action: Optional[CodeType]
+
 
 def runAction(action: Optional[CodeType], locals: dict[AnyStr, Any]):
     #TODO: Figure out how to make this access modules such as pandas and matlib from user input
@@ -74,7 +78,7 @@ class SM_State:
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add transition from {self.stateName} to {targetState.stateName} (syntax error in action)") from e
 
-        self._transitions.append((c, targetState, a))
+        self._transitions.append(SM_Transition(c, targetState, a))
 
         return self
 
