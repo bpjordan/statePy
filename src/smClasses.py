@@ -1,4 +1,3 @@
-from lib2to3.pgen2.token import OP
 from types import CodeType
 from typing import List, Tuple, Optional, Any, NamedTuple
 import warnings
