@@ -22,6 +22,9 @@ def constructSM():
     yellowLight.enterAction = "timeOn = 0; light = 'yellow'"
     greenLight.enterAction = "timeOn = 0; light = 'green'"
 
+    for light in (redLight, yellowLight, greenLight):
+        print(light.stateInfo())
+
 
     sim = sm.SM_Simulation(redLight, {}, None)
 

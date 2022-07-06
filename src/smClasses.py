@@ -202,7 +202,7 @@ class SM_State:
 
         return a
 
-    def __repr__(self):
+    def stateInfo(self):
         s = "state: " + self.stateName
 
         if self._actionStrings is not None:
