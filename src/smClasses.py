@@ -81,7 +81,11 @@ class SM_State:
         except SyntaxError as e:
             raise SMBuildException(f"Failed to add transition from {self.stateName} to {targetState.stateName} (syntax error in action)") from e
 
-        self._transitions.append(SM_Transition(c, targetState, a))
+        if self._actionStrings is None:
+            self._transitions.append(SM_Transition(c, targetState, a))
+        else:
+            self._transitions.append(SM_Transition(c, targetState, a, condition, action))
+            
 
         return self
 
