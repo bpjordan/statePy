@@ -38,7 +38,7 @@ class SM_State:
     def __init__(self, name: str):
         self._stateName: str = name
         self._transitions: list[SM_Transition] = []
-        self._defaultChildState :Optional["SM_State"] = None
+        self._defaultChildState: Optional["SM_State"] = None
         self._enterAction: Optional[CodeType] = None
         self._duringAction: Optional[CodeType] = None
         self._exitAction: Optional[CodeType] = None
@@ -143,6 +143,51 @@ class SM_State:
                 return t
 
         return None
+
+    @classmethod
+    def fromDict(cls, spec: dict):
+        a = cls(spec.get("name", "UnnamedClass"))
+
+        entrySpec = spec.get("entry")
+        if entrySpec is not None:
+            a.enterAction = entrySpec
+
+        duringSpec = spec.get("during")
+        if duringSpec is not None:
+            a.enterAction = duringSpec
+
+        exitSpec = spec.get("exit")
+        if exitSpec is not None:
+            a.enterAction = exitSpec
+
+
+        childrenSpec = spec.get("children")
+
+        if childrenSpec is not None:
+            children = {childspec["name"]: cls.fromDict(childspec) for childspec in childrenSpec}
+            for childspec in childrenSpec:
+                transitionspecs = childspec.get("transitions")
+                if transitionspecs is not None:
+                    for transitionspec in transitionspecs:
+                        tCond = transitionspec.get("condition")
+                        tDest = children.get(transitionspec.get("destination"))
+                        tAct = transitionspec.get("action")
+
+                        if tCond is not None and tDest is not None:
+                            children[childspec["name"]].addTransition(tCond, tDest, tAct)
+                        else:
+                            warnings.warn(f"Transition from {childspec['name']} to {transitionspec.get('destination', 'Unknown')} could not be created: action or destination not found")
+
+        defaultChildName = spec.get("defaultChild")
+
+        if defaultChildName is not None:
+            a.defaultChildState = children[defaultChildName]
+        else:
+            a.defaultChildState = children.values()[0]
+            warnings.warn(f"Default child state not specified for {a.stateName}, defaulting to {a.defaultChildState.stateName}")
+
+
+        return a
 
 
 class SM_ActiveState:
