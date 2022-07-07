@@ -1,7 +1,8 @@
 
 from .smClasses import SM_State, SM_Simulation
 from .smExceptions import SMBuildException, SMStateNotFoundException
-import json
+import json, jsonschema
+from pathlib import Path
 
 def loadFromJson(jsonFileName: str):
     """
@@ -9,6 +10,14 @@ def loadFromJson(jsonFileName: str):
     """
     with open(jsonFileName) as jsonFP:
         fullspec = json.load(jsonFP)
+
+    schemaPath = Path(__file__).with_name("simSchema.json")
+    with schemaPath.open() as schemaFP:
+        schema = json.load(schemaFP)
+
+    jsonschema.validate(fullspec, schema)
+
+    del schema
 
     stateMachines = []
 
