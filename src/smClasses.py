@@ -170,11 +170,11 @@ class SM_State:
 
         duringSpec = spec.get("during")
         if duringSpec is not None:
-            a.enterAction = duringSpec
+            a.duringAction = duringSpec
 
         exitSpec = spec.get("exit")
         if exitSpec is not None:
-            a.enterAction = exitSpec
+            a.exitAction = exitSpec
 
 
         childrenSpec = spec.get("children")
@@ -192,15 +192,15 @@ class SM_State:
                         if tCond is not None and tDest is not None:
                             children[childspec["name"]].addTransition(tCond, tDest, tAct)
                         else:
-                            warnings.warn(f"Transition from {childspec['name']} to {transitionspec.get('destination', 'Unknown')} could not be created: action or destination not found")
+                            warnings.warn(f"Transition from {childspec['name']} to {transitionspec.get('destination', '<unknown>')} could not be created: action or destination not found")
 
-        defaultChildName = spec.get("defaultChild")
+            defaultChildName = spec.get("defaultChild")
 
-        if defaultChildName is not None:
-            a.defaultChildState = children[defaultChildName]
-        else:
-            a.defaultChildState = children.values()[0]
-            warnings.warn(f"Default child state not specified for {a.stateName}, defaulting to {a.defaultChildState.stateName}")
+            if defaultChildName is not None:
+                a._defaultChildState = children[defaultChildName]
+            else:
+                a._defaultChildState = list(children.values())[0]
+                warnings.warn(f"Default child state not specified for {a.stateName}, defaulting to {a.defaultChildState.stateName}")
 
 
         return a
@@ -274,7 +274,7 @@ class SM_Simulation:
     An object that controls a single simulation of the state machine and exposes its parameters
     """
 
-    def __init__(self, startState:SM_State, inputParams:dict[str, Any], outputParams:Optional[List[str]]):
+    def __init__(self, startState:SM_State, inputParams:dict[str, Any], outputParams:Optional[List[str]] = None):
         self.simData = inputParams
         self.outputParams = outputParams
         self.currentState = SM_ActiveState(startState, self.simData)

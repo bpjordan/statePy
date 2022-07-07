@@ -27,7 +27,15 @@ def constructSM():
 
 
     sim = sm.SM_Simulation(redLight, {}, None)
+    runSim(sim)
 
+def constructSMfromJson(jsonFileName:str):
+    sims = sm.loadFromJson(jsonFileName)
+    print(sims[0].currentState.stateTemplate.stateInfo())
+    print(sims[0].currentState.childState.stateTemplate.stateInfo())
+    runSim(sims[0])
+
+def runSim(sim:sm.SM_Simulation):
     simThread = threading.Thread(target=sm.SM_Simulation.start, args=(sim, 20))
     simThread.start()
     while sim.remainingIterations is not None and sim.remainingIterations > 0:
@@ -44,6 +52,7 @@ def constructSM():
     print(f"{sim.elapsedIterations}: {sim.simData}")
 
     print("Successfully stopped simulation thread")
+
 
 if __name__ == '__main__':
     constructSM()

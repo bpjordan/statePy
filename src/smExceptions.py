@@ -6,6 +6,9 @@ class SMException(Exception):
 class SMBuildException(SMException):
     pass
 
+class SMStateNotFoundException(SMBuildException):
+    pass
+
 class SMRuntimeException(SMException):
     pass
 

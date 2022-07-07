@@ -1,0 +1,69 @@
+{
+    "statemachines":[
+        {
+            "states": [
+                {
+                    "name":"working",
+                    "children": [
+                        {
+                            "name": "Red",
+                            "entry": "timeOn = 0; light = 'red'",
+                            "during": "timeOn += 1",
+                            "transitions": [
+                                { "condition": "timeOn > 19", "destination": "Green" }
+                            ]
+                        },
+                        {
+                            "name": "Yellow",
+                            "entry": "timeOn = 0; light = 'yellow'",
+                            "during": "timeOn += 1",
+                            "transitions": [
+                                { "condition": "timeOn > 2", "destination": "Red" }
+                            ]
+                        },
+                        {
+                            "name": "Green",
+                            "entry": "timeOn = 0; light = 'green'",
+                            "during": "timeOn += 1",
+                            "transitions": [
+                                { "condition": "timeOn > 9", "destination": "Yellow" }
+                            ]
+                        }
+                    ],
+                    "defaultChildState": "Red",
+                    "transitions":[
+                        {"condition": "fault", "destination": "Fault"}
+                    ]
+                },
+                {
+                    "name": "Fault",
+                    "children":[
+                        {
+                            "name": "RedOn",
+                            "entry":"timeOn = 0; light = 'red'",
+                            "during":"timeOn += 1",
+                            "transitions":[
+                                {"condition":"timeOn > 2", "destination":"RedOff"}
+                            ]
+                        },
+                        {
+                            "name": "RedOff",
+                            "entry":"timeOn = 0; light = 'none'",
+                            "during":"timeOn += 1",
+                            "transitions":[
+                                {"condition":"timeOn > 2", "destination":"RedOn"}
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "defaultstate": "working"
+        }
+    ],
+    "simulations":[
+        {
+            "statemachine": 0,
+            "initialdata": {"fault": false}
+        }
+    ]
+}
