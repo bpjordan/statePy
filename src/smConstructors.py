@@ -1,6 +1,6 @@
 
 from .smLogging import SM_LoggerBC, SM_MongoLogger, SM_NullLogger
-from .smClasses import SM_State, SM_Simulation
+from .smClasses import SM_State, SM_Simulation, registerModule
 from .smExceptions import SMBuildException, SMStateNotFoundException, SMBuildWarning
 import json, jsonschema
 from pathlib import Path
@@ -45,6 +45,12 @@ def loadFromJson(jsonFileName: str):
         stateMachines.append(defaultState)
 
     loggers = [loggerFromDict(loggerSpec) for loggerSpec in fullspec["loggers"]]
+
+    for namespaceName, moduleName in fullspec["modules"].items():
+        try:
+            registerModule(moduleName, namespaceName)
+        except Exception as e:
+            raise SMBuildException(f"Failed to register module {moduleName}") from e
 
     sims = [SM_Simulation(startState = stateMachines[simSpec["statemachine"]], inputParams = simSpec["initialdata"],\
                 logger=loggers[simSpec["logger"]] if simSpec.get("logger") is not None else None) for simSpec in fullspec["simulations"]]

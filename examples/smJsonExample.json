@@ -10,6 +10,7 @@
                             "name": "Red",
                             "entry": "timeOn = 0; light = 'red'",
                             "during": "timeOn += 1",
+                            "exit": "nparray = np.array([1, 2, 3])",
                             "transitions": [
                                 { "condition": "timeOn > 19", "destination": "Green" }
                             ]
@@ -31,7 +32,7 @@
                             ]
                         }
                     ],
-                    "defaultChildState": "Red",
+                    "defaultchild": "Red",
                     "transitions":[
                         {"condition": "fault", "destination": "Fault"}
                     ]
@@ -55,7 +56,8 @@
                                 {"condition":"timeOn > 2", "destination":"RedOn"}
                             ]
                         }
-                    ]
+                    ],
+                    "defaultchild": "RedOn"
                 }
             ],
             "defaultstate": "working"
@@ -77,5 +79,8 @@
             "initialdata": {"fault": false},
             "logger": 0
         }
-    ]
+    ],
+    "modules": {
+        "np":"numpy"
+    }
 }

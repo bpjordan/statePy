@@ -1,7 +1,9 @@
 from datetime import datetime
+from tkinter import W
 from types import CodeType
 from typing import List, Tuple, Optional, Any, NamedTuple
 import warnings
+import importlib
 
 from .smExceptions import *
 from .smLogging import SM_LoggerBC, SM_NullLogger
@@ -14,14 +16,25 @@ class SM_Transition(NamedTuple):
     actionStr: Optional[str] = None
 
 
-def runAction(action: Optional[CodeType], locals: dict[str, Any]):
-    #TODO: Figure out how to make this access modules such as pandas and matlib from user input
-            # Possible use for a closure
-    if action is not None:
-        try:
-            exec(action, {}, locals)
-        except Exception as e:
-            raise SMRuntimeException("Execution of a state action failed") from e
+def mkActionNamespace():
+    globalNamespace = {}
+
+    def runAction(action: Optional[CodeType], locals: dict[str, Any]):
+        #TODO: Figure out how to make this access modules such as pandas and matlib from user input
+                # Possible use for a closure
+        if action is not None:
+            try:
+                exec(action, globalNamespace, locals)
+            except Exception as e:
+                raise SMRuntimeException("Execution of a state action failed") from e
+
+    def registerModule(module:str, workspacename:Optional[str] = None):
+        workspacename = workspacename if workspacename is not None else module
+        globalNamespace[workspacename] = importlib.import_module(module)
+
+    return runAction, registerModule
+
+runAction, registerModule = mkActionNamespace()
 
 class SM_State:
     """
@@ -196,7 +209,7 @@ class SM_State:
                         else:
                             warnings.warn(f"Transition from {childspec['name']} to {transitionspec.get('destination', '<unknown>')} could not be created: action or destination not found")
 
-            defaultChildName = spec.get("defaultChild")
+            defaultChildName = spec.get("defaultchild")
 
             if defaultChildName is not None:
                 a._defaultChildState = children[defaultChildName]

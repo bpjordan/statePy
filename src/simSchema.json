@@ -116,6 +116,12 @@
                 },
                 "required": ["statemachine", "initialdata"]
             }
+        },
+        "modules": {
+            "type":"object",
+            "additionalProperties": {
+                "type":"string"
+            }
         }
     }
 }
