@@ -1,8 +1,10 @@
 
+from .smLogging import SM_LoggerBC, SM_MongoLogger, SM_NullLogger
 from .smClasses import SM_State, SM_Simulation
-from .smExceptions import SMBuildException, SMStateNotFoundException
+from .smExceptions import SMBuildException, SMStateNotFoundException, SMBuildWarning
 import json, jsonschema
 from pathlib import Path
+import warnings
 
 def loadFromJson(jsonFileName: str):
     """
@@ -42,6 +44,22 @@ def loadFromJson(jsonFileName: str):
 
         stateMachines.append(defaultState)
 
-    sims = [SM_Simulation(stateMachines[simSpec["statemachine"]], simSpec["initialdata"]) for simSpec in fullspec["simulations"]]
+    loggers = [loggerFromDict(loggerSpec) for loggerSpec in fullspec["loggers"]]
+
+    sims = [SM_Simulation(startState = stateMachines[simSpec["statemachine"]], inputParams = simSpec["initialdata"],\
+                logger=loggers[simSpec["logger"]] if simSpec.get("logger") is not None else None) for simSpec in fullspec["simulations"]]
 
     return sims
+
+def loggerFromDict(spec:dict) -> SM_LoggerBC:
+
+    host = spec["host"]
+    port = spec["port"]
+    dbName = spec["dbname"]
+    tableName = spec["table"]
+
+    match spec["dbtype"]:
+        case "mongo":
+            return SM_MongoLogger(host=host, port=port, dbName=dbName, defaultTable=tableName)
+        case _:
+            warnings.warn("Invalid database type specified for logger", SMBuildWarning)

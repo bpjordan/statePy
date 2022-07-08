@@ -1,8 +1,10 @@
+from datetime import datetime
 from types import CodeType
 from typing import List, Tuple, Optional, Any, NamedTuple
 import warnings
 
 from .smExceptions import *
+from .smLogging import SM_LoggerBC, SM_NullLogger
 
 class SM_Transition(NamedTuple):
     condition: CodeType
@@ -274,7 +276,8 @@ class SM_Simulation:
     An object that controls a single simulation of the state machine and exposes its parameters
     """
 
-    def __init__(self, startState:SM_State, inputParams:dict[str, Any], outputParams:Optional[List[str]] = None):
+    def __init__(self, startState:SM_State, inputParams:dict[str, Any], outputParams:Optional[List[str]] = None,\
+                logInterval:Optional[int] = None, logger:SM_LoggerBC = None):
         self.simData = inputParams
         self.outputParams = outputParams
         self.currentState = SM_ActiveState(startState, self.simData)
@@ -282,15 +285,27 @@ class SM_Simulation:
         self.isRunning = False
         self.safe = True
         self.elapsedIterations = 0
+        if logger is None:
+            self.logInterval = None
+            self.logger = SM_NullLogger
+        else:
+            self.logInterval = 10 if logInterval is None else logInterval
+            self.logger = logger
 
     def run(self):
-        while self.isRunning is True:
-            while self.remainingIterations is None or self.remainingIterations > 0:
-                self.safe = False
-                self.remainingIterations -= 1
-                self.currentState.iterate(self.simData)
-                self.elapsedIterations += 1
-            self.safe = True
+        with self.logger as log:
+            while self.isRunning is True:
+                while self.remainingIterations is None or self.remainingIterations > 0:
+                    self.safe = False
+                    self.remainingIterations -= 1
+                    self.currentState.iterate(self.simData)
+                    self.elapsedIterations += 1
+
+                    if self.logInterval is not None and self.elapsedIterations % self.logInterval == 0:
+                        logDict = {"iteration": self.elapsedIterations, "logTime": datetime.now(), "data": self.simData}
+                        print(f"logging to {log.dbName}.{log.defaultTable}...")
+                        log.logData(logDict)
+                self.safe = True
 
     def start(self, iterations=None):
 
@@ -334,3 +349,21 @@ class SM_Simulation:
             self.isRunning = False
         else:
             warnings.warn("Attempted to stop a simulation that was already stopped", SMControlWarning)
+
+    def enableLogging(self, logger:Optional[SM_LoggerBC] = None, logInterval:int = 10) -> bool:
+        if logger is None:
+            if self.logger is SM_NullLogger:
+                self.logInterval = 0
+                warnings.warn("Attempted to enable logging, but no logger was provided")
+                return False
+            else:
+                self.logInterval = logInterval
+
+        else:
+            self.logger = logger
+            self.logInterval = logInterval
+
+        return True
+
+    def disableLogging(self):
+        self.logInterval = None

@@ -1,4 +1,5 @@
 {
+    "$schema": "../src/simSchema.json",
     "statemachines":[
         {
             "states": [
@@ -60,10 +61,21 @@
             "defaultstate": "working"
         }
     ],
+    "loggers":[
+        {
+            "dbtype": "mongo",
+            "dbname": "simtest",
+            "host": "127.0.0.1",
+            "port": 27017,
+            "table": "simData"
+        }
+
+    ],
     "simulations":[
         {
             "statemachine": 0,
-            "initialdata": {"fault": false}
+            "initialdata": {"fault": false},
+            "logger": 0
         }
     ]
 }

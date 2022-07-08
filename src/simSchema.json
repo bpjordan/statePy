@@ -72,6 +72,32 @@
                 "required":["states", "defaultstate"]
             }
         },
+        "loggers":{
+            "description": "Connection information for logging simulation data to a database",
+            "type":"array",
+            "items": {
+                "type":"object",
+                "properties": {
+                    "dbtype":{
+                        "enum": ["mongo"]
+                    },
+                    "host": {
+                        "type":"string",
+                        "format": "hostname"
+                    },
+                    "port": {
+                        "type":"integer"
+                    },
+                    "dbname": {
+                        "type":"string"
+                    },
+                    "table": {
+                        "type":"string"
+                    }
+                },
+                "required": ["dbtype", "host", "dbname", "table"]
+            }
+        },
         "simulations": {
             "description": "Initialization data for parallel simulations",
             "type": "array",
@@ -83,6 +109,9 @@
                     },
                     "initialdata": {
                         "type":"object"
+                    },
+                    "logger":{
+                        "type":"integer"
                     }
                 },
                 "required": ["statemachine", "initialdata"]
