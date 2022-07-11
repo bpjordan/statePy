@@ -8,20 +8,30 @@ from . import smLogging
 SMExceptionLogger:smLogging.SM_LoggerBC = smLogging.SM_NullLogger
 
 def registerExceptionLogger(logger: smLogging.SM_LoggerBC):
+    """
+    Set a logger for all exceptions related to StatePy state machines.
+
+    Loggers can be subclassed from SM_LoggerBC
+    """
     global SMExceptionLogger
     SMExceptionLogger = logger
 
 class SMException(Exception):
+    """
+    An exception related to a StatePy state machine.
+
+    To automatically log all StatePy exceptions, use the registerExceptionLogger method.
+    """
     def __init__(self, msg: str, **kwargs):
         self.msg = msg
         self._logException(message = msg, **kwargs)
 
     def __str__(self) -> str:
-        s = type(self).__name__ + ":" + self.msg
+        s = self.msg
         return s
 
     def _logException(self, **kwargs):
-        kwargs.update({"_logTime": datetime.now()})
+        kwargs.update({"logTime": datetime.now(), "class": type(self).__name__, "logType": "Exception"})
         with SMExceptionLogger as l:
             logSuccess = l.logData(kwargs)
 
@@ -35,7 +45,13 @@ class SMStateNotFoundException(SMBuildException):
     pass
 
 class SMRuntimeException(SMException):
-    pass
+    def __init__(self, err: Exception, **kwargs):
+        self.err = err
+        super().__init__("Execution of a state action raised an error", err = {"errtype": type(err).__name__, "errmsg": str(err)}, **kwargs)
+
+    def __str__(self) -> str:
+        s = super().__str__() + ": " + repr(self.err)
+        return s
 
 class SMLogException(SMRuntimeException):
     pass

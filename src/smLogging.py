@@ -4,6 +4,14 @@ from pymongo import MongoClient
 import abc
 
 class SM_LoggerBC(metaclass=abc.ABCMeta):
+    """
+    Base class defining a simulation logger for logging data to a database.
+
+    Implement the following methods to use:
+    start(): establish a connection to the database
+    logData(data:dict): Log the data specified in the data argument to the database
+    stop(): safely teardown the database connection
+    """
 
     def __init__(self, host:str, port:int, dbName:str, defaultTable:str = "simData"):
         self.host = host

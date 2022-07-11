@@ -9,6 +9,8 @@ import warnings
 def loadFromJson(jsonFileName: str):
     """
     Returns a list of SM_Simulation objects specified by a json file
+
+    A json schema is provided in src/simSchema.json
     """
     with open(jsonFileName) as jsonFP:
         fullspec = json.load(jsonFP)

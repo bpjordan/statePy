@@ -19,13 +19,11 @@ def mkActionNamespace():
     globalNamespace = {}
 
     def runAction(action: Optional[CodeType], locals: dict[str, Any]):
-        #TODO: Figure out how to make this access modules such as pandas and matlib from user input
-                # Possible use for a closure
         if action is not None:
             try:
                 exec(action, globalNamespace, locals)
             except Exception as e:
-                raise SMRuntimeException("Execution of a state action failed") from e
+                raise SMRuntimeException(err = e, dataSnapshot = locals)
 
     def registerModule(module:str, workspacename:Optional[str] = None):
         workspacename = workspacename if workspacename is not None else module
