@@ -9,8 +9,7 @@
                         {
                             "name": "Red",
                             "entry": "timeOn = 0; light = 'red'",
-                            "during": "timeOn += 1",
-                            "exit": "nparray = np.array([1, 2, 3])",
+                            "during": "timeOn += 1; waa",
                             "transitions": [
                                 { "condition": "timeOn > 19", "destination": "Green" }
                             ]
@@ -70,6 +69,13 @@
             "host": "127.0.0.1",
             "port": 27017,
             "table": "simData"
+        },
+        {
+            "dbtype": "mongo",
+            "dbname": "simtest",
+            "host": "127.0.0.1",
+            "port": 27017,
+            "table": "simErrors"
         }
 
     ],
@@ -80,7 +86,5 @@
             "logger": 0
         }
     ],
-    "modules": {
-        "np":"numpy"
-    }
+    "errorlogger": 1
 }

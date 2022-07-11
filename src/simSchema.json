@@ -122,6 +122,10 @@
             "additionalProperties": {
                 "type":"string"
             }
+        },
+        "errorlogger": {
+            "type": "integer",
+            "minimum": 0
         }
     }
 }

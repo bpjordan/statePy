@@ -1,7 +1,7 @@
 
 from .smLogging import SM_LoggerBC, SM_MongoLogger, SM_NullLogger
 from .smClasses import SM_State, SM_Simulation, registerModule
-from .smExceptions import SMBuildException, SMStateNotFoundException, SMBuildWarning
+from .smExceptions import SMBuildException, SMStateNotFoundException, SMBuildWarning, registerExceptionLogger
 import json, jsonschema
 from pathlib import Path
 import warnings
@@ -20,6 +20,10 @@ def loadFromJson(jsonFileName: str):
     jsonschema.validate(fullspec, schema)
 
     del schema
+
+    return loadFromDict(fullspec)
+
+def loadFromDict(fullspec:dict):
 
     stateMachines = []
 
@@ -46,7 +50,7 @@ def loadFromJson(jsonFileName: str):
 
     loggers = [loggerFromDict(loggerSpec) for loggerSpec in fullspec["loggers"]]
 
-    for namespaceName, moduleName in fullspec["modules"].items():
+    for namespaceName, moduleName in fullspec.get("modules", {}).items():
         try:
             registerModule(moduleName, namespaceName)
         except Exception as e:
@@ -55,6 +59,10 @@ def loadFromJson(jsonFileName: str):
     sims = [SM_Simulation(startState = stateMachines[simSpec["statemachine"]], inputParams = simSpec["initialdata"],\
                 logger=loggers[simSpec["logger"]] if simSpec.get("logger") is not None else None) for simSpec in fullspec["simulations"]]
 
+    if (errorLogger := fullspec.get("errorlogger")) is not None:
+        registerExceptionLogger(loggers[errorLogger])
+
+    
     return sims
 
 def loggerFromDict(spec:dict) -> SM_LoggerBC:
